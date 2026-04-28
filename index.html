@@ -7,84 +7,118 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-10">
+<body class="min-h-screen pb-10">
 
     <div class="max-w-2xl mx-auto px-4 pt-8">
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-slate-800">運動紀錄</h1>
-            <button onclick="toggleView()" id="toggleBtn" class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-md hover:bg-indigo-700 transition">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <span class="text-indigo-400">⚡</span> 運動紀錄
+            </h1>
+            <button onclick="toggleView()" id="toggleBtn" class="bg-indigo-600 text-white px-5 py-2 rounded-lg shadow-lg hover:bg-indigo-500 transition font-medium">
                 查看細項記錄
             </button>
         </div>
 
         <div id="main-view" class="tab-content active">
+            <div id="total-hours-container" class="card p-8 rounded-3xl mb-6 text-center shadow-2xl shadow-indigo-900/20">
+                <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">累計總訓練時數</p>
+                <p id="total-hours" class="text-5xl font-black text-indigo-400 mt-2">--</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-4" id="summary-grid">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 animate-pulse">載入中...</div>
+                <div class="card p-6 rounded-2xl animate-pulse">載入中...</div>
             </div>
         </div>
 
         <div id="detail-view" class="tab-content">
-            <h2 class="text-lg font-semibold mb-4 text-slate-700">每日訓練細項</h2>
-            <div id="detail-list" class="space-y-3">
+            <h2 class="text-lg font-semibold mb-4 text-slate-300">歷史訓練清單</h2>
+            <div id="detail-list" class="space-y-4">
                 </div>
         </div>
     </div>
 
     <script>
-        // 請替換為你發佈的 CSV 網址
-        const summaryCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=500074129&single=true&output=csv';
-        const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=0&single=true&output=csv';
+        // --- 請確認這兩個網址是正確的 CSV 發佈網址 ---
+        const summaryCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTj-RzH7z7p80Xf01Q9p5Eis9H2WbH-zO_rN8B0e_p0_C8P_e_nIyn203jILQ/pub?gid=0&output=csv'; 
+        const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTj-RzH7z7p80Xf01Q9p5Eis9H2WbH-zO_rN8B0e_p0_C8P_e_nIyn203jILQ/pub?gid=123456789&output=csv'; // 範例 GID
 
         let isDetailView = false;
 
-        // 1. 抓取並顯示總表數據
         function loadSummary() {
             Papa.parse(summaryCsvUrl, {
                 download: true, header: true,
                 complete: function(results) {
                     const d = results.data[0];
+                    if (!d) return;
+
+                    // 顯示累計時數
+                    document.getElementById('total-hours').innerText = d['累計時數'] || '00:00:00';
+
+                    // 四個方塊
                     const fields = [
-                        { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-600' },
-                        { label: '中斷次數', value: d['中斷次數'], color: 'text-red-500' },
-                        { label: '連續達成', value: d['連續達成'], color: 'text-orange-500' },
-                        { label: '最高連續', value: d['最高連續'], color: 'text-green-600' }
+                        { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-400' },
+                        { label: '中斷次數', value: d['中斷次數'], color: 'text-pink-400' },
+                        { label: '連續達成', value: d['連續達成'], color: 'text-amber-400' },
+                        { label: '最高連續', value: d['最高連續'], color: 'text-emerald-400' }
                     ];
                     document.getElementById('summary-grid').innerHTML = fields.map(f => `
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <p class="text-slate-500 text-sm font-medium">${f.label}</p>
-                            <p class="text-3xl font-black ${f.color} mt-1">${f.value || 0}</p>
+                        <div class="card p-6 rounded-2xl">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">${f.label}</p>
+                            <p class="text-3xl font-black ${f.color} mt-2">${f.value || 0}</p>
                         </div>
                     `).join('');
                 }
             });
         }
 
-        // 2. 抓取並顯示細項數據
         function loadDetails() {
             Papa.parse(detailCsvUrl, {
                 download: true, header: true,
                 complete: function(results) {
-                    // 按日期分組資料
                     const grouped = {};
+                    
                     results.data.forEach(row => {
                         if(!row.日期) return;
-                        if(!grouped[row.日期]) grouped[row.日期] = { time: row.時間小計 || '--', songs: [] };
-                        grouped[row.日期].songs.push(`${row.歌手} - ${row.歌名}`);
+                        if(!grouped[row.日期]) {
+                            grouped[row.日期] = { 
+                                dateObj: new Date(row.日期), 
+                                totalTime: row.時間小計 || '--', 
+                                items: [] 
+                            };
+                        }
+                        // 加上時間資訊 (分:秒)
+                        grouped[row.日期].items.push({
+                            name: `${row.歌手} - ${row.歌名}`,
+                            duration: row.時間 || ''
+                        });
                     });
 
-                    const listHtml = Object.keys(grouped).map(date => `
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                            <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition">
-                                <span class="font-bold text-slate-700">${date}</span>
-                                <span class="text-slate-400 text-sm">⏳ ${grouped[date].time} ▾</span>
+                    // 依日期倒序排序 (最新的在上面)
+                    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+                    const listHtml = sortedDates.map(date => `
+                        <div class="card rounded-xl overflow-hidden shadow-lg">
+                            <button onclick="toggleAccordion(this)" class="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-700/50 transition">
+                                <div class="text-left">
+                                    <p class="font-bold text-white">${date}</p>
+                                    <p class="text-xs text-slate-400 mt-1">總計：${grouped[date].totalTime}</p>
+                                </div>
+                                <span class="text-slate-500 text-sm">詳細 ▾</span>
                             </button>
-                            <div class="hidden px-5 py-3 bg-slate-50 border-t border-slate-100">
-                                <ul class="text-sm text-slate-600 space-y-1">
-                                    ${grouped[date].songs.map(s => `<li>• ${s}</li>`).join('')}
+                            <div class="hidden px-5 py-4 bg-slate-800/50 border-t border-slate-700">
+                                <ul class="text-sm space-y-3">
+                                    ${grouped[date].items.map(item => `
+                                        <li class="flex justify-between items-center border-b border-slate-700/50 pb-2">
+                                            <span class="text-slate-300">${item.name}</span>
+                                            <span class="text-indigo-400 font-mono text-xs">${item.duration}</span>
+                                        </li>
+                                    `).join('')}
                                 </ul>
                             </div>
                         </div>
@@ -94,7 +128,11 @@
             });
         }
 
-        // 切換視圖功能
+        function toggleAccordion(btn) {
+            const content = btn.nextElementSibling;
+            content.classList.toggle('hidden');
+        }
+
         function toggleView() {
             isDetailView = !isDetailView;
             const main = document.getElementById('main-view');
