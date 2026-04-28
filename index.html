@@ -32,15 +32,11 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-6" id="summary-grid">
-                </div>
+                <div class="card p-6 rounded-2xl animate-pulse text-center">載入中...</div>
+            </div>
 
             <div class="grid grid-cols-2 gap-4" id="rank-grid">
                 </div>
-        </div>
-
-            <div class="grid grid-cols-2 gap-4" id="summary-grid">
-                <div class="card p-6 rounded-2xl animate-pulse">載入中...</div>
-            </div>
         </div>
 
         <div id="detail-view" class="tab-content">
@@ -51,14 +47,12 @@
     </div>
 
     <script>
-        // --- 請確認這兩個網址是正確的 CSV 發佈網址 ---
         const summaryCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=500074129&single=true&output=csv'; 
-        const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=0&single=true&output=csv'; // 範例 GID
+        const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=0&single=true&output=csv';
 
         let isDetailView = false;
 
-        
-      function loadSummary() {
+        function loadSummary() {
             Papa.parse(summaryCsvUrl, {
                 download: true, header: true,
                 complete: function(results) {
@@ -68,7 +62,7 @@
                     // 1. 顯示累計時數
                     document.getElementById('total-hours').innerText = d['累計時數'] || '00:00:00';
 
-                    // 2. 四個方塊 (置中且加大約 2pt -> 使用 text-4xl)
+                    // 2. 四個方塊
                     const fields = [
                         { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-400' },
                         { label: '中斷次數', value: d['中斷次數'], color: 'text-pink-400' },
@@ -82,15 +76,15 @@
                         </div>
                     `).join('');
 
-                    // 3. 歌手排名與播放次數
+                    // 3. 歌手排名與播放次數 (優化顯示以防文字過長)
                     const ranks = [
                         { label: '熱門歌手排名', value: d['歌手排名'], color: 'text-indigo-300' },
                         { label: '累計播放次數', value: d['播放次數'], color: 'text-indigo-300' }
                     ];
                     document.getElementById('rank-grid').innerHTML = ranks.map(r => `
-                        <div class="card p-5 rounded-2xl text-center border-dashed">
+                        <div class="card p-5 rounded-2xl text-center border-dashed flex flex-col justify-center min-h-[100px]">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">${r.label}</p>
-                            <p class="text-2xl font-bold ${r.color}">${r.value || '--'}</p>
+                            <p class="text-xl font-bold ${r.color} break-words leading-tight">${r.value || '--'}</p>
                         </div>
                     `).join('');
                 }
@@ -102,28 +96,21 @@
                 download: true, header: true,
                 complete: function(results) {
                     const grouped = {};
-                    
                     results.data.forEach(row => {
                         if(!row.日期) return;
                         if(!grouped[row.日期]) {
-                            grouped[row.日期] = { 
-                                dateObj: new Date(row.日期), 
-                                totalTime: row.時間小計 || '--', 
-                                items: [] 
-                            };
+                            grouped[row.日期] = { totalTime: row.時間小計 || '--', items: [] };
                         }
-                        // 加上時間資訊 (分:秒)
                         grouped[row.日期].items.push({
                             name: `${row.歌手} - ${row.歌名}`,
                             duration: row.時間 || ''
                         });
                     });
 
-                    // 依日期倒序排序 (最新的在上面)
                     const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
                     const listHtml = sortedDates.map(date => `
-                        <div class="card rounded-xl overflow-hidden shadow-lg">
+                        <div class="card rounded-xl overflow-hidden shadow-lg mb-4">
                             <button onclick="toggleAccordion(this)" class="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-700/50 transition">
                                 <div class="text-left">
                                     <p class="font-bold text-white">${date}</p>
@@ -167,11 +154,10 @@
             } else {
                 detail.classList.remove('active');
                 main.classList.add('active');
-                btn.innerText = '查看細項記錄';
+                btn.innerText = '查看細項';
             }
         }
 
-        // 初始載入
         loadSummary();
     </script>
 </body>
