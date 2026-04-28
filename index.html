@@ -31,6 +31,13 @@
                 <p id="total-hours" class="text-5xl font-black text-indigo-400 mt-2">--</p>
             </div>
 
+            <div class="grid grid-cols-2 gap-4 mb-6" id="summary-grid">
+                </div>
+
+            <div class="grid grid-cols-2 gap-4" id="rank-grid">
+                </div>
+        </div>
+
             <div class="grid grid-cols-2 gap-4" id="summary-grid">
                 <div class="card p-6 rounded-2xl animate-pulse">載入中...</div>
             </div>
@@ -50,17 +57,18 @@
 
         let isDetailView = false;
 
-        function loadSummary() {
+        
+      function loadSummary() {
             Papa.parse(summaryCsvUrl, {
                 download: true, header: true,
                 complete: function(results) {
                     const d = results.data[0];
                     if (!d) return;
 
-                    // 顯示累計時數
+                    // 1. 顯示累計時數
                     document.getElementById('total-hours').innerText = d['累計時數'] || '00:00:00';
 
-                    // 四個方塊
+                    // 2. 四個方塊 (置中且加大約 2pt -> 使用 text-4xl)
                     const fields = [
                         { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-400' },
                         { label: '中斷次數', value: d['中斷次數'], color: 'text-pink-400' },
@@ -68,9 +76,21 @@
                         { label: '最高連續', value: d['最高連續'], color: 'text-emerald-400' }
                     ];
                     document.getElementById('summary-grid').innerHTML = fields.map(f => `
-                        <div class="card p-6 rounded-2xl">
-                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">${f.label}</p>
-                            <p class="text-3xl font-black ${f.color} mt-2">${f.value || 0}</p>
+                        <div class="card p-6 rounded-2xl text-center">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">${f.label}</p>
+                            <p class="text-4xl font-black ${f.color}">${f.value || 0}</p>
+                        </div>
+                    `).join('');
+
+                    // 3. 歌手排名與播放次數
+                    const ranks = [
+                        { label: '熱門歌手排名', value: d['歌手排名'], color: 'text-indigo-300' },
+                        { label: '累計播放次數', value: d['播放次數'], color: 'text-indigo-300' }
+                    ];
+                    document.getElementById('rank-grid').innerHTML = ranks.map(r => `
+                        <div class="card p-5 rounded-2xl text-center border-dashed">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">${r.label}</p>
+                            <p class="text-2xl font-bold ${r.color}">${r.value || '--'}</p>
                         </div>
                     `).join('');
                 }
