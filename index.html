@@ -3,63 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>腹魚川田線</title>
+    <title>腹魚川馬線</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
+<body class="bg-slate-50 min-h-screen pb-10">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-extrabold text-gray-800">腹魚川田線</h1>
-            <p class="text-gray-500 mt-2">WorkOutRecord</p>
-        </header>
-
-        <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="animate-pulse bg-white p-6 rounded-2xl shadow-sm">載入中...</div>
+    <div class="max-w-2xl mx-auto px-4 pt-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">運動紀錄</h1>
+            <button onclick="toggleView()" id="toggleBtn" class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-md hover:bg-indigo-700 transition">
+                查看細項記錄
+            </button>
         </div>
 
-        <footer class="mt-12 text-center text-gray-400 text-sm">
-            資料來源：Google Sheets | 自動同步更新
-        </footer>
+        <div id="main-view" class="tab-content active">
+            <div class="grid grid-cols-2 gap-4" id="summary-grid">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 animate-pulse">載入中...</div>
+            </div>
+        </div>
+
+        <div id="detail-view" class="tab-content">
+            <h2 class="text-lg font-semibold mb-4 text-slate-700">每日訓練細項</h2>
+            <div id="detail-list" class="space-y-3">
+                </div>
+        </div>
     </div>
 
     <script>
-        // 請替換成你從 Google Sheets 取得的 CSV 網址
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?output=csv';
+        // 請替換為你發佈的 CSV 網址
+        const summaryCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=500074129&single=true&output=csv';
+        const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=0&single=true&output=csv';
 
-        function fetchStats() {
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true,
+        let isDetailView = false;
+
+        // 1. 抓取並顯示總表數據
+        function loadSummary() {
+            Papa.parse(summaryCsvUrl, {
+                download: true, header: true,
                 complete: function(results) {
-                    const data = results.data[0]; // 取得第一列數據
-                    renderStats(data);
+                    const d = results.data[0];
+                    const fields = [
+                        { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-600' },
+                        { label: '中斷次數', value: d['中斷次數'], color: 'text-red-500' },
+                        { label: '連續達成', value: d['連續達成'], color: 'text-orange-500' },
+                        { label: '最高連續', value: d['最高連續'], color: 'text-green-600' }
+                    ];
+                    document.getElementById('summary-grid').innerHTML = fields.map(f => `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-slate-500 text-sm font-medium">${f.label}</p>
+                            <p class="text-3xl font-black ${f.color} mt-1">${f.value || 0}</p>
+                        </div>
+                    `).join('');
                 }
             });
         }
 
-        function renderStats(data) {
-            const container = document.getElementById('stats-grid');
-            
-            // 定義要顯示的欄位與對應的顏色
-            const fields = [
-                { label: '總訓練日', value: data['總訓練日'], color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: '連續達成', value: data['連續達成'], color: 'text-orange-600', bg: 'bg-orange-50' },
-                { label: '總歌曲數', value: data['總歌曲數'], color: 'text-purple-600', bg: 'bg-purple-50' },
-                { label: '最高連續', value: data['最高連續'], color: 'text-green-600', bg: 'bg-green-50' },
-                { label: '聽過幾位', value: data['聽過幾位'], color: 'text-red-600', bg: 'bg-red-50' }
-            ];
+        // 2. 抓取並顯示細項數據
+        function loadDetails() {
+            Papa.parse(detailCsvUrl, {
+                download: true, header: true,
+                complete: function(results) {
+                    // 按日期分組資料
+                    const grouped = {};
+                    results.data.forEach(row => {
+                        if(!row.日期) return;
+                        if(!grouped[row.日期]) grouped[row.日期] = { time: row.時間小計 || '--', songs: [] };
+                        grouped[row.日期].songs.push(`${row.歌手} - ${row.歌名}`);
+                    });
 
-            container.innerHTML = fields.map(item => `
-                <div class="${item.bg} p-6 rounded-2xl shadow-sm border border-white transition-transform hover:scale-105">
-                    <p class="text-gray-600 font-medium mb-1">${item.label}</p>
-                    <p class="text-3xl font-black ${item.color}">${item.value || 0}</p>
-                </div>
-            `).join('');
+                    const listHtml = Object.keys(grouped).map(date => `
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                            <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition">
+                                <span class="font-bold text-slate-700">${date}</span>
+                                <span class="text-slate-400 text-sm">⏳ ${grouped[date].time} ▾</span>
+                            </button>
+                            <div class="hidden px-5 py-3 bg-slate-50 border-t border-slate-100">
+                                <ul class="text-sm text-slate-600 space-y-1">
+                                    ${grouped[date].songs.map(s => `<li>• ${s}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('detail-list').innerHTML = listHtml;
+                }
+            });
         }
 
-        fetchStats();
+        // 切換視圖功能
+        function toggleView() {
+            isDetailView = !isDetailView;
+            const main = document.getElementById('main-view');
+            const detail = document.getElementById('detail-view');
+            const btn = document.getElementById('toggleBtn');
+
+            if (isDetailView) {
+                main.classList.remove('active');
+                detail.classList.add('active');
+                btn.innerText = '返回總覽';
+                loadDetails();
+            } else {
+                detail.classList.remove('active');
+                main.classList.add('active');
+                btn.innerText = '查看細項記錄';
+            }
+        }
+
+        // 初始載入
+        loadSummary();
     </script>
 </body>
 </html>
