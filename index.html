@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腹魚川田線</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800">腹魚川田線</h1>
+            <p class="text-gray-500 mt-2">WorkOutRecord</p>
+        </header>
+
+        <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="animate-pulse bg-white p-6 rounded-2xl shadow-sm">載入中...</div>
+        </div>
+
+        <footer class="mt-12 text-center text-gray-400 text-sm">
+            資料來源：Google Sheets | 自動同步更新
+        </footer>
+    </div>
+
+    <script>
+        // 請替換成你從 Google Sheets 取得的 CSV 網址
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?output=csv';
+
+        function fetchStats() {
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    const data = results.data[0]; // 取得第一列數據
+                    renderStats(data);
+                }
+            });
+        }
+
+        function renderStats(data) {
+            const container = document.getElementById('stats-grid');
+            
+            // 定義要顯示的欄位與對應的顏色
+            const fields = [
+                { label: '總訓練日', value: data['總訓練日'], color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: '連續達成', value: data['連續達成'], color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: '總歌曲數', value: data['總歌曲數'], color: 'text-purple-600', bg: 'bg-purple-50' },
+                { label: '最高連續', value: data['最高連續'], color: 'text-green-600', bg: 'bg-green-50' },
+                { label: '聽過幾位', value: data['聽過幾位'], color: 'text-red-600', bg: 'bg-red-50' }
+            ];
+
+            container.innerHTML = fields.map(item => `
+                <div class="${item.bg} p-6 rounded-2xl shadow-sm border border-white transition-transform hover:scale-105">
+                    <p class="text-gray-600 font-medium mb-1">${item.label}</p>
+                    <p class="text-3xl font-black ${item.color}">${item.value || 0}</p>
+                </div>
+            `).join('');
+        }
+
+        fetchStats();
+    </script>
+</body>
+</html>
