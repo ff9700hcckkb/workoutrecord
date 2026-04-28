@@ -29,16 +29,11 @@
             <div id="total-hours-container" class="card p-8 rounded-3xl mb-6 text-center shadow-2xl shadow-indigo-900/20">
                 <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">累計總時數</p>
                 <p id="total-hours" class="text-5xl font-black text-indigo-400 mt-2">--</p>
+                <p id="total-plays" class="text-slate-500 text-xs mt-4 tracking-widest uppercase">累計播放次數：--</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-6" id="summary-grid">
                 <div class="card p-6 rounded-2xl animate-pulse text-center">載入中...</div>
-            </div>
-
-            <div id="rank-view" class="mt-6">
-                <div class="card p-6 rounded-3xl border-indigo-500/30 shadow-lg shadow-indigo-900/10 text-center" id="rank-container">
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">載入排名中...</p>
-                </div>
             </div>
         </div>
 
@@ -50,7 +45,6 @@
     </div>
 
     <script>
-        // 請確保這兩個網址正確
         const summaryCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=500074129&single=true&output=csv'; 
         const detailCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlQ1F2GUSFPG8I-xiSDDA4wRZPk3wYGpRfozap84xk9ZZmk_74qjJGCDX9TbXJZmHKqnY-pdJgqIJG/pub?gid=0&single=true&output=csv';
 
@@ -64,10 +58,11 @@
                     const d = results.data[0];
                     if (!d) return;
 
-                    // 1. 顯示累計時數
+                    // 1. 顯示累計時數與播放次數
                     document.getElementById('total-hours').innerText = d['累計時數'] || '00:00:00';
+                    document.getElementById('total-plays').innerText = `累計播放次數：${d['播放次數'] || 0}`;
 
-                    // 2. 四個數據方塊 (置中且加大)
+                    // 2. 四個數據方塊
                     const fields = [
                         { label: '總訓練日', value: d['總訓練日'], color: 'text-blue-400' },
                         { label: '中斷次數', value: d['中斷次數'], color: 'text-pink-400' },
@@ -80,21 +75,6 @@
                             <p class="text-4xl font-black ${f.color}">${f.value || 0}</p>
                         </div>
                     `).join('');
-
-                    // 3. 大框框顯示歌手排名 (處理 H1 公式產生的換行符號)
-                    const rankText = d['歌手排名'] ? d['歌手排名'].replace(/\n/g, '<br>') : '暫無排名資料';
-                    
-                    document.getElementById('rank-container').innerHTML = `
-                        <div class="mb-4">
-                            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">🏆 熱門歌手排名 🏆</p>
-                        </div>
-                        <div class="text-indigo-100 text-lg font-medium leading-relaxed">
-                            ${rankText}
-                        </div>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <p class="text-slate-500 text-xs tracking-wide">累計播放次數：${d['播放次數'] || 0}</p>
-                        </div>
-                    `;
                 }
             });
         }
@@ -116,7 +96,6 @@
                         });
                     });
 
-                    // 依日期倒序排列 (假設日期格式為 YYYY/MM/DD)
                     const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
                     const listHtml = sortedDates.map(date => `
@@ -168,7 +147,6 @@
             }
         }
 
-        // 初始化
         loadSummary();
     </script>
 </body>
