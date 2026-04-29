@@ -29,7 +29,7 @@
             <div id="total-hours-container" class="card p-8 rounded-3xl mb-6 text-center shadow-2xl shadow-indigo-900/20">
                 <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">累計總時數</p>
                 <p id="total-hours" class="text-5xl font-black text-indigo-400 mt-2">--</p>
-                <p id="total-plays" class="text-slate-500 text-xs mt-4 tracking-widest uppercase">累計播放次數：--</p>
+               
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-6" id="summary-grid">
@@ -58,9 +58,9 @@
                     const d = results.data[0];
                     if (!d) return;
 
-                    // 1. 顯示累計時數與播放次數
+                    // 1. 顯示累計時數
                     document.getElementById('total-hours').innerText = d['累計時數'] || '00:00:00';
-                    document.getElementById('total-plays').innerText = `累計播放次數：${d['播放次數'] || 0}`;
+                    
 
                     // 2. 四個數據方塊
                     const fields = [
